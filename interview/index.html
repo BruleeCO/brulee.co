@@ -47,6 +47,17 @@
         <div class="messages" id="messages" aria-live="polite"></div>
 
         <div class="composer" id="interview-composer">
+          <div class="composer-tools">
+            <div class="composer-media">
+              <label class="sr-only" for="image-link-input">Image link</label>
+              <input id="image-link-input" type="url" placeholder="Paste an image link..." autocomplete="off">
+              <button id="add-image-link" type="button">Add link</button>
+              <button id="upload-image" type="button">Upload image</button>
+              <input id="image-file-input" type="file" accept="image/*" hidden>
+            </div>
+            <div class="pending-attachments" id="pending-attachments" hidden></div>
+            <p class="composer-note">You can attach a photo or image link before you reply, then tell me what it shows.</p>
+          </div>
           <label class="sr-only" for="answer-input">Your answer</label>
           <textarea id="answer-input" rows="4" placeholder="Answer in your own words..." autocomplete="off"></textarea>
           <div class="composer-actions">

@@ -197,10 +197,140 @@ h1 {
   border-top-right-radius: 2px;
 }
 
+.message-text {
+  white-space: pre-wrap;
+}
+
+.message-attachments {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.message-attachment {
+  display: grid;
+  gap: 8px;
+}
+
+.message-attachment-preview {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.message-attachment-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.message-attachment-link {
+  color: inherit;
+  text-decoration: underline;
+  word-break: break-word;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 .composer {
   border-top: 1px solid var(--line);
   padding: 16px;
   background: #fff;
+}
+
+.composer-tools {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.composer-media {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.composer-media input[type="url"] {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid #cfc5b9;
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: #fff;
+}
+
+.composer-media input[type="url"]:focus {
+  outline: 3px solid rgba(33, 115, 111, 0.2);
+  border-color: var(--teal);
+}
+
+.composer-media button {
+  min-height: 42px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  padding: 10px 14px;
+  font-weight: 800;
+  cursor: pointer;
+  color: #fff;
+  background: var(--teal);
+}
+
+.composer-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.pending-attachments {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.pending-attachment {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #faf7f2;
+}
+
+.pending-attachment-thumb {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #ede5d9;
+}
+
+.pending-attachment-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pending-attachment-meta {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.pending-attachment-remove {
+  border: 0;
+  background: transparent;
+  color: var(--ember);
+  font-weight: 800;
+  padding: 0;
+  justify-self: start;
+  cursor: pointer;
 }
 
 textarea {
@@ -333,5 +463,9 @@ textarea:focus {
   .composer-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .composer-media {
+    grid-template-columns: 1fr;
   }
 }

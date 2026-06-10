@@ -1,9 +1,50 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+type TranscriptAttachment = {
+  kind?: string;
+  source?: "url" | "upload";
+  name?: string;
+  url?: string;
+  previewUrl?: string;
+};
+
 type TranscriptEntry = {
   role: "interviewer" | "participant";
   text: string;
+  attachments?: TranscriptAttachment[];
 };
+
+const DEFAULT_PROMPT = `You are conducting an oral-history interview for Brulee, a consent-centered Burning Man camp/community.
+
+Your job is to ask one warm, specific follow-up question at a time. This must feel like an interview, not a form.
+
+Interview goals:
+- Start with a pleasant greeting.
+- Ask where the participant is from.
+- Ask how they found Brulee.
+- Ask what years they joined or which years feel most connected to their story.
+- Elicit concrete memories and sensory details.
+- Ask about belonging, play, care, consent, safety, participation, and what could improve.
+- If the participant shared an image, ask about the image directly and invite them to describe what it shows and why it matters.
+- Respect boundaries. Do not pressure the participant to disclose trauma or identifying details.
+- When the conversation has enough substance, return [[COMPLETE]].
+
+Return ONLY the next question as plain text.
+Do not include JSON.
+Do not introduce the question with labels or commentary.
+Do not say "Here is".
+Do not begin with an acknowledgement like "That's great" or "And".
+Write one complete question only, ending with a question mark.
+
+Completion guidance:
+- Continue for at least 6 participant answers unless the participant wants to stop.
+- Complete by 12 participant answers.
+- If the participant says they are done, complete.
+- On the first participant reply, ask how they found Brulee.
+- On the second participant reply, ask what years they joined or which years feel most connected to their story.
+- After those openings, move into a specific memory, then a photo or link if they add one.
+- Ground each question in a concrete Brulee detail from the site or from the participant's answer.
+- Prefer questions that mention Brulee, the camp, Join, Facebook group, Radical Consent, Etiquette & Protocol, Consent Incident Report, or the 2024 pages.`;
 
 const GEMINI_API_KEY =
   Deno.env.get("GEMINI_API_KEY") ||
@@ -26,37 +67,37 @@ function jsonResponse(data: unknown, status = 200): Response {
   });
 }
 
-function buildPrompt(transcript: TranscriptEntry[]): string {
+function attachmentSummary(attachment: TranscriptAttachment): string {
+  if (attachment.source === "upload") {
+    return `uploaded image ${attachment.name || "image"}`;
+  }
+  if (attachment.url) {
+    return `image link ${attachment.url}`;
+  }
+  return attachment.name || "image";
+}
+
+function buildPrompt(basePrompt: string, transcript: TranscriptEntry[]): string {
   const conversation = transcript
     .slice(-18)
-    .map((entry) => `${entry.role === "interviewer" ? "Interviewer" : "Participant"}: ${entry.text}`)
+    .flatMap((entry) => {
+      const blocks = [`${entry.role === "interviewer" ? "Brulee interviewer" : "Participant"}: ${entry.text}`];
+      if (Array.isArray(entry.attachments) && entry.attachments.length) {
+        blocks.push(
+          ...entry.attachments.map((attachment, index) => `Attachment ${index + 1}: ${attachmentSummary(attachment)}`)
+        );
+      }
+      return blocks;
+    })
     .join("\n\n");
 
-  return `You are conducting an oral-history interview for Brulee, a consent-centered Burning Man camp/community.
-
-Your job is to ask one warm, specific follow-up question at a time. This must feel like an interview, not a form.
-
-Interview goals:
-- Elicit concrete memories and sensory details.
-- Ask about belonging, play, care, consent, safety, participation, and what could improve.
-- Respect boundaries. Do not pressure the participant to disclose trauma or identifying details.
-- When the conversation has enough substance, return [[COMPLETE]].
-
-Return ONLY the next question as plain text.
-Do not include JSON.
-Do not introduce the question with labels or commentary.
-Do not say "Here is".
-
-Completion guidance:
-- Continue for at least 6 participant answers unless the participant wants to stop.
-- Complete by 12 participant answers.
-- If the participant says they are done, complete.
+  return `${basePrompt.trim()}
 
 Conversation so far:
 ${conversation || "(new interview)"}`;
 }
 
-async function askGemini(transcript: TranscriptEntry[]) {
+async function askGemini(prompt: string, transcript: TranscriptEntry[]) {
   if (!GEMINI_API_KEY) {
     return jsonResponse({ error: "Gemini API key is not configured" }, 500);
   }
@@ -66,7 +107,7 @@ async function askGemini(transcript: TranscriptEntry[]) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: buildPrompt(transcript) }] }],
+      contents: [{ role: "user", parts: [{ text: buildPrompt(prompt || DEFAULT_PROMPT, transcript) }] }],
       generationConfig: {
         temperature: 0.72,
         maxOutputTokens: 220,
@@ -79,24 +120,9 @@ async function askGemini(transcript: TranscriptEntry[]) {
   }
 
   const data = await response.json();
-  const text = (data.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
+  const text = String(data.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
   const complete = text.includes("[[COMPLETE]]");
-  let question = text
-    .replace(/\[\[COMPLETE\]\]/g, "")
-    .replace(/^["']|["']$/g, "")
-    .trim();
-
-  if (
-    !complete &&
-    (!question ||
-      question.length < 52 ||
-      /^can you tell me (a little )?more\\??$/i.test(question) ||
-      /\\bat\\?$/i.test(question))
-  ) {
-    question = "What did people do in that moment that made the welcome feel real?";
-  } else if (!complete && question && !/[?.!]$/.test(question)) {
-    question += "?";
-  }
+  const question = text.replace(/\[\[COMPLETE\]\]/g, "").replace(/^["']|["']$/g, "").trim();
 
   return jsonResponse({
     question,
@@ -112,7 +138,8 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const transcript = Array.isArray(body.transcript) ? body.transcript : [];
-    return await askGemini(transcript);
+    const prompt = typeof body.prompt === "string" ? body.prompt : DEFAULT_PROMPT;
+    return await askGemini(prompt, transcript);
   } catch (error) {
     return jsonResponse({ error: error instanceof Error ? error.message : "Unknown error" }, 400);
   }
