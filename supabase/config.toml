@@ -1,0 +1,4 @@
+project_id = "awgvectmhuwrudoxvnwm"
+
+[functions.brulee-interview]
+verify_jwt = false

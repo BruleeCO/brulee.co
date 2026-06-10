@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Share Your Brulee Story | Brûlée</title>
+    <meta name="description" content="A guided chat-style interview for Brulee community stories and experiences.">
+    <meta name="brulee-interview-endpoint" content="https://awgvectmhuwrudoxvnwm.supabase.co/functions/v1/brulee-interview">
+    <link rel="icon" href="../wp-content/uploads/2022/01/cropped-Brulee-B-Icon-32x32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="../wp-content/uploads/2022/01/cropped-Brulee-B-Icon-180x180.png">
+    <link rel="stylesheet" href="../assets/interview/interview.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="../index.html" aria-label="Brulee home">
+        <img src="../wp-content/uploads/2022/01/Brulee-LOGO.png" alt="Brûlée">
+      </a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="../index.html">Home</a>
+        <a href="../join/">Join</a>
+        <a href="../contact-us/">Contact</a>
+        <a aria-current="page" href="./">Share Experience</a>
+      </nav>
+    </header>
+
+    <main class="interview-shell">
+      <section class="intro-panel" aria-labelledby="interview-title">
+        <p class="eyebrow">Oral history</p>
+        <h1 id="interview-title">Share your Brulee experience</h1>
+        <p class="intro-copy">A one-on-one conversation for memories, reflections, and the parts of Brulee that deserve to be remembered.</p>
+        <div class="note">
+          <strong>Private until you send it.</strong>
+          <span>Your answers stay in this browser unless you copy, download, or email the transcript.</span>
+        </div>
+      </section>
+
+      <section class="chat-card" aria-label="Brulee interview chat">
+        <div class="chat-topbar">
+          <div>
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="interview-status">Ready</span>
+          </div>
+          <button class="link-button" id="reset-interview" type="button">Start over</button>
+        </div>
+
+        <div class="messages" id="messages" aria-live="polite"></div>
+
+        <div class="composer" id="interview-composer">
+          <label class="sr-only" for="answer-input">Your answer</label>
+          <textarea id="answer-input" rows="4" placeholder="Answer in your own words..." autocomplete="off"></textarea>
+          <div class="composer-actions">
+            <span class="composer-hint" id="composer-hint">Press Reply when you are ready.</span>
+            <button id="send-answer" type="button">Reply</button>
+          </div>
+        </div>
+
+        <div class="complete-actions" id="complete-actions" hidden>
+          <button type="button" id="copy-transcript">Copy transcript</button>
+          <button type="button" id="download-transcript">Download</button>
+          <a id="email-transcript" href="#">Email</a>
+        </div>
+      </section>
+    </main>
+
+    <script src="../assets/interview/interview.js"></script>
+  </body>
+</html>
