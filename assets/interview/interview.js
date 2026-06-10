@@ -57,6 +57,26 @@
     ].join("\n");
   }
 
+  function buildRepairPrompt(previousDraft) {
+    return [
+      buildInterviewPrompt(),
+      "",
+      "The previous draft was invalid because it was not one complete question.",
+      "Rewrite it as exactly one complete question ending with a question mark.",
+      "Do not add any acknowledgement, preamble, or extra sentence.",
+      `Previous draft: ${previousDraft || "(empty)"}`
+    ].join("\n");
+  }
+
+  function isValidQuestion(text) {
+    const value = String(text || "").trim();
+    if (!value) return false;
+    if (!/[?]$/.test(value)) return false;
+    if (value.length < 20) return false;
+    if (/^(great|thanks|thank you|and|to start|let's|lets)/i.test(value)) return false;
+    return true;
+  }
+
   const fallbackPrompts = [
     "Hi, I'm glad you're here. What name should I use for you, and where are you joining us from?",
     "How did you first find Brulee?",
@@ -340,12 +360,12 @@
     return next;
   }
 
-  async function aiNextQuestion() {
+  async function requestQuestion(promptText) {
     if (!endpoint) return null;
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: buildInterviewPrompt(), transcript })
+      body: JSON.stringify({ prompt: promptText, transcript })
     });
     if (!response.ok) throw new Error(`Interview endpoint returned ${response.status}`);
     return response.json();
@@ -359,13 +379,16 @@
     setBusy(true);
 
     try {
-      const ai = await aiNextQuestion();
+      let ai = await requestQuestion(buildInterviewPrompt());
       if (ai?.complete) {
         finishInterview();
         return;
       }
-      if (ai?.question) {
-        interviewerSays(ai.question);
+      if (ai?.question && !isValidQuestion(ai.question)) {
+        ai = await requestQuestion(buildRepairPrompt(ai.question));
+      }
+      if (ai?.question && isValidQuestion(ai.question)) {
+        interviewerSays(ai.question.trim());
         hint.textContent = ai.hint || "Take your time.";
         return;
       }
@@ -390,7 +413,8 @@
   });
 
   input.addEventListener("keydown", (event) => {
-    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
       sendButton.click();
     }
   });
